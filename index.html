@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ Charamparambu Playground</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --green-mid: #9FE1CB;
+    --red: #D85A30;
+    --red-light: #FAECE7;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --gray: #5F5E5A;
+    --gray-light: #F1EFE8;
+    --border: #e2e2de;
+    --bg: #f8f8f5;
+    --white: #ffffff;
+    --text: #1a1a18;
+    --text-muted: #6b6b67;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand { display: flex; align-items: center; gap: 10px; }
+  .header-brand .icon { font-size: 24px; }
+  .header-brand .name { font-weight: 600; font-size: 15px; }
+  .header-brand .sub { font-size: 12px; color: var(--text-muted); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .role-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500;
+    background: var(--green-light); color: var(--green-dark);
+  }
+  .role-badge.admin { background: #EEF2FF; color: #3730a3; }
+
+  /* sync indicator */
+  #sync-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ccc; display: inline-block;
+    transition: background 0.3s;
+  }
+  #sync-dot.live { background: #1D9E75; box-shadow: 0 0 0 2px #9FE1CB; }
+  #sync-dot.saving { background: #BA7517; }
+  #sync-dot.error { background: #D85A30; }
+  #sync-label { font-size: 11px; color: var(--text-muted); }
+
+  .nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 12px 16px;
+    font-size: 13px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--green-dark); border-bottom-color: var(--green); font-weight: 500; }
+  .tab .badge-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--red); border-radius: 50%; margin-left: 4px; vertical-align: middle;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 14px; font-weight: 500; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title span { color: var(--text-muted); font-weight: 400; font-size: 12px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-val { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .stat-val.green { color: var(--green-dark); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.amber { color: var(--amber); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 8px 10px;
+    font-weight: 500; font-size: 11px;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  tfoot td { font-weight: 500; border-top: 1px solid var(--border); border-bottom: none; background: #fafaf8; }
+
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px;
+    border-radius: 20px; font-weight: 500; white-space: nowrap;
+  }
+  .badge-green { background: var(--green-light); color: var(--green-dark); }
+  .badge-red { background: var(--red-light); color: #7a2e18; }
+  .badge-amber { background: var(--amber-light); color: #6b3d08; }
+  .badge-gray { background: var(--gray-light); color: #444; }
+  .badge-blue { background: #EEF2FF; color: #3730a3; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .form-row { display: flex; flex-direction: column; gap: 5px; }
+  .form-row label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .form-row input, .form-row select, .form-row textarea {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    background: var(--white);
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    outline: none; border-color: var(--green);
+  }
+
+  .btn {
+    padding: 9px 18px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--white);
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--green); color: white; border-color: var(--green-dark); }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-danger { background: var(--red); color: white; border-color: #a8421e; }
+  .btn-danger:hover { background: #b84a24; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  .alert {
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    font-size: 13px; margin-bottom: 16px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .alert-green { background: var(--green-light); color: var(--green-dark); border: 1px solid var(--green-mid); }
+  .alert-red { background: var(--red-light); color: #7a2e18; border: 1px solid #f0997b; }
+  .alert-amber { background: var(--amber-light); color: #6b3d08; border: 1px solid #ef9f27; }
+  .alert-blue { background: #EEF2FF; color: #3730a3; border: 1px solid #c7d2fe; }
+
+  /* ── Setup / Login screens ── */
+  #setup-screen, #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+  }
+  .login-box {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; padding: 36px; width: 400px; text-align: center;
+  }
+  .login-box .ball { font-size: 40px; margin-bottom: 12px; }
+  .login-box h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .login-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .login-choice { display: flex; gap: 10px; margin-bottom: 20px; }
+  .login-choice button {
+    flex: 1; padding: 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--white); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .login-choice button.selected { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+  .login-choice button:hover { background: var(--bg); }
+  .admin-pass { margin-bottom: 16px; }
+
+  .approve-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .approve-row .info { flex: 1; min-width: 0; }
+  .approve-row .actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .month-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 4px; }
+  .month-cell {
+    text-align: center; font-size: 10px; padding: 3px 2px;
+    border-radius: 3px; cursor: default;
+  }
+  .month-cell.paid { background: var(--green-light); color: var(--green-dark); }
+  .month-cell.due { background: var(--red-light); color: #7a2e18; }
+  .month-cell.na { background: var(--gray-light); color: var(--text-muted); }
+
+  .amt { font-family: 'DM Mono', monospace; font-size: 13px; }
+  .amt-green { color: var(--green-dark); }
+  .amt-red { color: var(--red); }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .section-header h2 { font-size: 16px; font-weight: 500; }
+
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--green-dark); color: white;
+    padding: 12px 20px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.25s; z-index: 999; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  .contrib-input {
+    width: 70px; padding: 4px 6px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 12px; font-family: 'DM Mono', monospace; text-align: right;
+  }
+  .contrib-input:focus { outline: none; border-color: var(--green); }
+
+  /* monthly breakdown table */
+  #monthly-contrib-table th, #monthly-contrib-table td {
+    font-size: 12px; padding: 8px 6px; white-space: nowrap;
+  }
+  .mcell {
+    display: inline-block; min-width: 38px; padding: 3px 6px;
+    border-radius: 4px; text-align: right; font-family: 'DM Mono', monospace;
+    font-size: 11px; font-weight: 500;
+  }
+  .mcell-paid  { background: var(--green-light); color: var(--green-dark); }
+  .mcell-zero  { background: var(--red-light);   color: #7a2e18; }
+  .mcell-empty { background: var(--gray-light);  color: var(--text-muted); }
+  .mcell-part  { background: var(--amber-light); color: #6b3d08; }
+
+  /* setup steps */
+  .setup-step { margin-bottom: 20px; text-align: left; }
+  .setup-step h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .setup-step p { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+  .setup-step code {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 6px; font-family: 'DM Mono', monospace; font-size: 11px;
+  }
+  .setup-step input {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px; font-family: 'DM Mono', monospace;
+    margin-top: 8px;
+  }
+  .setup-step input:focus { outline: none; border-color: var(--green); }
+  .step-num {
+    display: inline-block; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--green); color: white; text-align: center; line-height: 22px;
+    font-size: 11px; font-weight: 600; margin-right: 6px;
+  }
+
+  /* loading overlay */
+  #loading-overlay {
+    position: fixed; inset: 0; background: rgba(255,255,255,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; font-size: 14px; color: var(--text-muted);
+    flex-direction: column; gap: 12px;
+  }
+  .spinner {
+    width: 28px; height: 28px; border: 3px solid var(--border);
+    border-top-color: var(--green); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .container { padding: 16px 12px; }
+    .login-box { width: 95vw; padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <span>Connecting to shared data…</span>
+</div>
+
+<!-- FIREBASE SETUP SCREEN (shown only if not configured) -->
+<div id="setup-screen" style="display:none;">
+  <div class="login-box" style="width:480px;text-align:left;">
+    <div style="text-align:center;">
+      <div class="ball">⚽</div>
+      <h1 style="margin-bottom:4px">One-time Setup</h1>
+      <p>Connect to Firebase so all group members share live data</p>
+    </div>
+
+    <div class="setup-step">
+      <h3><span class="step-num">1</span>Create a free Firebase project</h3>
+      <p>Go to <strong>console.firebase.google.com</strong> → Add project → name it <code>charamparambu</code> → Continue → Disable Analytics → Create project</p>
+    </div>
+
+    <div class="setup-step">
+      <h3><span class="step-num">2</span>Create a Firestore database</h3>
+      <p>In your project → Build → Firestore Database → Create database → Start in <strong>test mode</strong> → Choose a region near you (e.g. <code>asia-south1</code>) → Enable</p>
+    </div>
+
+    <div class="setup-step">
+      <h3><span class="step-num">3</span>Register a Web App</h3>
+      <p>Project settings (gear icon) → Your apps → Web (&lt;/&gt;) → App nickname: <code>cp-app</code> → Register app → Copy the <code>firebaseConfig</code> values below</p>
+    </div>
+
+    <div class="setup-step">
+      <h3><span class="step-num">4</span>Paste your Firebase config</h3>
+      <p>Find these values in <code>firebaseConfig</code> object on Firebase console:</p>
+      <input type="text" id="cfg-apiKey" placeholder="apiKey" />
+      <input type="text" id="cfg-authDomain" placeholder="authDomain (e.g. xxx.firebaseapp.com)" style="margin-top:6px"/>
+      <input type="text" id="cfg-projectId" placeholder="projectId" style="margin-top:6px"/>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="saveConfig()">Save & Connect →</button>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center;">This is a one-time setup. Share the configured file with your group — everyone will connect to the same database automatically.</p>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none;">
+  <div class="login-box">
+    <div class="ball">⚽</div>
+    <h1>Charamparambu Playground</h1>
+    <p>Group Finance Tracker · 2025–2026</p>
+    <div class="login-choice">
+      <button onclick="selectRole('member')" id="btn-member">👤 Member</button>
+      <button onclick="selectRole('admin')" id="btn-admin">🔑 Admin</button>
+    </div>
+    <div id="member-select" style="display:none; margin-bottom:16px;">
+      <div class="form-row">
+        <label>Select your name</label>
+        <select id="login-member">
+          <option value="">— choose —</option>
+        </select>
+      </div>
+    </div>
+    <div id="admin-pass" class="admin-pass" style="display:none;">
+      <div class="form-row">
+        <label>Admin password</label>
+        <input type="password" id="admin-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;" onclick="doLogin()">Enter →</button>
+    <p style="margin-top:12px; font-size:11px; color:var(--text-muted);">Admin default password: <strong>cp2025</strong></p>
+    <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:6px;">
+      <span id="sync-dot"></span>
+      <span id="sync-label">Connecting…</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <div class="header">
+    <div class="header-brand">
+      <div class="icon">⚽</div>
+      <div>
+        <div class="name">Charamparambu Playground</div>
+        <div class="sub">Group Finance · 2025–2026</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="sync-dot-app"></span>
+      <span id="sync-label-app" style="font-size:11px;color:var(--text-muted);"></span>
+      <span class="role-badge" id="role-display">Member</span>
+      <button class="btn btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="nav" id="nav-tabs">
+    <button class="tab active" onclick="showTab('overview',event)">📊 Overview</button>
+    <button class="tab" onclick="showTab('contributions',event)">👥 Contributions</button>
+    <button class="tab" onclick="showTab('expenses-view',event)">🧾 Expenses</button>
+    <button class="tab" onclick="showTab('balance',event)">⚖️ Balance</button>
+    <button class="tab" onclick="showTab('dues',event)">⚠️ Dues</button>
+    <button class="tab" id="tab-add" onclick="showTab('add-expense',event)">➕ Add Expense</button>
+    <button class="tab" id="tab-admin" onclick="showTab('admin',event)" style="display:none;">🔑 Admin <span class="badge-dot" id="pending-dot" style="display:none;"></span></button>
+  </div>
+
+  <div class="container">
+
+    <!-- OVERVIEW -->
+    <div id="overview" class="section active">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">Total collected</div><div class="stat-val green" id="s-collected">₹0</div></div>
+        <div class="stat"><div class="stat-label">Total approved expenses</div><div class="stat-val red" id="s-expenses">₹0</div></div>
+        <div class="stat"><div class="stat-label">Current balance</div><div class="stat-val green" id="s-balance">₹0</div></div>
+        <div class="stat"><div class="stat-label">Pending approval</div><div class="stat-val amber" id="s-pending">₹0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Monthly summary</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Month</th><th style="text-align:right">Collected (₹)</th><th style="text-align:right">Expenses (₹)</th><th style="text-align:right">Balance (₹)</th></tr></thead>
+            <tbody id="overview-body"></tbody>
+            <tfoot><tr>
+              <td>Annual total</td>
+              <td class="amt" style="text-align:right" id="ov-tot-col">—</td>
+              <td class="amt" style="text-align:right" id="ov-tot-exp">—</td>
+              <td class="amt" style="text-align:right" id="ov-tot-bal">—</td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTRIBUTIONS -->
+    <div id="contributions" class="section">
+      <div class="alert alert-blue">ℹ️ Monthly contributions updated by admin only. ₹100 per member per month.</div>
+
+      <!-- Summary card -->
+      <div class="card">
+        <div class="card-title">Member contributions <span>Jan–Dec 2025–26 · ₹100/month</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Member</th><th style="text-align:right">Total paid (₹)</th><th>Status</th></tr></thead>
+            <tbody id="contrib-body"></tbody>
+            <tfoot><tr>
+              <td colspan="2">Grand total</td>
+              <td class="amt" style="text-align:right" id="contrib-total">—</td>
+              <td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Month-by-month detail card -->
+      <div class="card">
+        <div class="card-title">Month-by-month payment detail <span>🟢 Paid &nbsp; 🔴 Unpaid &nbsp; ⬜ Not entered</span></div>
+        <div class="table-wrap">
+          <table id="monthly-contrib-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Member</th>
+                <th style="text-align:right">Jan</th>
+                <th style="text-align:right">Feb</th>
+                <th style="text-align:right">Mar</th>
+                <th style="text-align:right">Apr</th>
+                <th style="text-align:right">May</th>
+                <th style="text-align:right">Jun</th>
+                <th style="text-align:right">Jul</th>
+                <th style="text-align:right">Aug</th>
+                <th style="text-align:right">Sep</th>
+                <th style="text-align:right">Oct</th>
+                <th style="text-align:right">Nov</th>
+                <th style="text-align:right">Dec</th>
+                <th style="text-align:right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="monthly-contrib-body"></tbody>
+            <tfoot>
+              <tr id="monthly-contrib-foot">
+                <td colspan="2" style="font-weight:500">Month total</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPENSES VIEW -->
+    <div id="expenses-view" class="section">
+      <div class="alert alert-blue">ℹ️ Only admin-approved expenses are shown here. Use "Add Expense" to submit yours.</div>
+      <div class="card">
+        <div class="card-title">Approved expenses</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Description</th><th>Submitted by</th><th>Month</th><th style="text-align:right">Amount (₹)</th></tr></thead>
+            <tbody id="expense-body"></tbody>
+          </table>
+          <div id="no-expenses" style="text-align:center;padding:32px;color:var(--text-muted);">No approved expenses yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BALANCE -->
+    <div id="balance" class="section">
+      <div class="card">
+        <div class="card-title">Expenses & balance statement</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Month</th><th style="text-align:right">Collected (₹)</th><th style="text-align:right">Expenses (₹)</th><th style="text-align:right">Balance (₹)</th></tr></thead>
+            <tbody id="balance-body"></tbody>
+            <tfoot><tr>
+              <td>Annual total</td>
+              <td class="amt" style="text-align:right" id="bal-tot-col">—</td>
+              <td class="amt" style="text-align:right" id="bal-tot-exp">—</td>
+              <td class="amt" style="text-align:right" id="bal-tot-bal">—</td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DUES -->
+    <div id="dues" class="section">
+      <div class="alert alert-amber">⚠️ Outstanding dues are auto-calculated based on contributions received. ₹100 per member per month = ₹1,200/year each.</div>
+      <div class="card">
+        <div class="card-title">Outstanding dues register</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Member</th><th style="text-align:right">Expected (₹)</th><th style="text-align:right">Paid (₹)</th><th style="text-align:right">Outstanding (₹)</th><th>Status</th></tr></thead>
+            <tbody id="dues-body"></tbody>
+            <tfoot><tr>
+              <td colspan="2">Total</td>
+              <td class="amt" style="text-align:right" id="dues-exp">—</td>
+              <td class="amt" style="text-align:right" id="dues-paid">—</td>
+              <td class="amt amt-red" style="text-align:right" id="dues-out">—</td>
+              <td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD EXPENSE -->
+    <div id="add-expense" class="section">
+      <div class="alert alert-green">✅ Your expense will be submitted for admin approval. Once approved it will appear in the Expenses tab.</div>
+      <div class="card">
+        <div class="card-title">Submit an expense</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Your name</label>
+            <select id="f-member" disabled><option>—</option></select>
+          </div>
+          <div class="form-row">
+            <label>Date of expense</label>
+            <input type="date" id="f-date">
+          </div>
+          <div class="form-row">
+            <label>Month</label>
+            <select id="f-month">
+              <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+              <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+              <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Amount (₹)</label>
+            <input type="number" id="f-amount" placeholder="0" min="1" step="1">
+          </div>
+          <div class="form-row" style="grid-column:1/-1">
+            <label>Expense description</label>
+            <input type="text" id="f-desc" placeholder="e.g. Pitch maintenance, ball purchase, net repair...">
+          </div>
+          <div class="form-row" style="grid-column:1/-1">
+            <label>Additional notes (optional)</label>
+            <textarea id="f-notes" rows="2" placeholder="Any details the admin should know..."></textarea>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <button class="btn btn-primary" onclick="submitExpense()">Submit for approval →</button>
+        </div>
+      </div>
+
+      <div class="card" id="my-submissions-card">
+        <div class="card-title">My submissions</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount (₹)</th><th>Status</th></tr></thead>
+            <tbody id="my-submissions-body"></tbody>
+          </table>
+          <div id="no-submissions" style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">You have not submitted any expenses yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin" class="section">
+      <div class="alert alert-blue">🔑 Admin panel — only you can see this section.</div>
+
+      <div class="card">
+        <div class="card-title">Pending expense approvals <span id="pending-count-label"></span></div>
+        <div id="pending-list"></div>
+        <div id="no-pending" style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">No pending expenses.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Update member contributions <span>Enter amount paid per month per member</span></div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">Month to update:</label>
+          <select id="contrib-month-select" style="margin-left:8px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;" onchange="renderContribEdit()">
+            <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+            <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+            <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Member</th><th>Amount paid (₹)</th><th></th></tr></thead>
+            <tbody id="contrib-edit-body"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick="saveContributions()">Save contributions →</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Manage members</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Total paid (₹)</th><th></th></tr></thead>
+            <tbody id="member-manage-body"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <input type="text" id="new-member-name" placeholder="New member name" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;">
+          <button class="btn btn-primary" onclick="addMember()">Add member</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Change admin password</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>New password</label>
+            <input type="password" id="new-pass" placeholder="New password">
+          </div>
+          <div class="form-row">
+            <label>Confirm password</label>
+            <input type="password" id="confirm-pass" placeholder="Confirm">
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick="changePassword()">Update password</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CONFIG_KEY = 'cp_firebase_config';
+const PASS_KEY   = 'cp_admin_pass';
+
+// ── CONFIG ────────────────────────────────────────────────────────
+function getSavedConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)); } catch(e) { return null; }
+}
+
+window.saveConfig = function() {
+  const apiKey     = document.getElementById('cfg-apiKey').value.trim();
+  const authDomain = document.getElementById('cfg-authDomain').value.trim();
+  const projectId  = document.getElementById('cfg-projectId').value.trim();
+  if (!apiKey || !authDomain || !projectId) { alert('Please fill in all three fields'); return; }
+  const cfg = { apiKey, authDomain, projectId };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  location.reload();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+let db, DB = null;
+let currentUser = null, currentRole = null;
+
+function setSyncStatus(state, text) {
+  ['sync-dot','sync-dot-app'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.className = ''; el.style.cssText='width:8px;height:8px;border-radius:50%;display:inline-block;transition:background 0.3s;'; el.classList.add(state === 'live' ? 'live' : state === 'saving' ? 'saving' : 'error'); if (state === 'live') { el.style.background='#1D9E75'; el.style.boxShadow='0 0 0 2px #9FE1CB'; } else if (state === 'saving') { el.style.background='#BA7517'; } else { el.style.background='#D85A30'; } }
+  });
+  ['sync-label','sync-label-app'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+}
+
+async function init() {
+  const cfg = getSavedConfig();
+  document.getElementById('loading-overlay').style.display = 'none';
+
+  if (!cfg) {
+    document.getElementById('setup-screen').style.display = 'flex';
+    return;
+  }
+
+  try {
+    const app = initializeApp(cfg);
+    db = getFirestore(app);
+
+    // Load or create DB doc
+    const ref = doc(db, 'app', 'data');
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      // First time — seed default data
+      await setDoc(ref, defaultData());
+    }
+    DB = (await getDoc(ref)).data();
+
+    // Realtime listener — updates all connected users live
+    onSnapshot(ref, (s) => {
+      if (s.exists()) {
+        DB = s.data();
+        setSyncStatus('live', '🟢 Live');
+        if (currentRole) renderAll();
+      }
+    });
+
+    setSyncStatus('live', '🟢 Live');
+    showLogin();
+  } catch(err) {
+    console.error(err);
+    setSyncStatus('error', '🔴 Error');
+    document.getElementById('loading-overlay').innerHTML = `
+      <div style="text-align:center;max-width:360px;padding:20px;">
+        <div style="font-size:28px;margin-bottom:12px;">⚠️</div>
+        <div style="font-weight:600;margin-bottom:8px;">Connection failed</div>
+        <div style="font-size:12px;color:#888;margin-bottom:16px;">${err.message}</div>
+        <button onclick="localStorage.removeItem('${CONFIG_KEY}');location.reload()" style="padding:8px 18px;background:#1D9E75;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Reset Firebase config</button>
+      </div>`;
+    document.getElementById('loading-overlay').style.display = 'flex';
+  }
+}
+
+function defaultData() {
+  return {
+    members: [
+      {name:'SARUN KUMAR'},{name:'CHIKKU'},{name:'SUPRAN'},{name:'AMAL'},
+      {name:'LARISH'},{name:'MANU KM'},{name:'YEJUS BABU'},{name:'RAKESH RAJU'},
+      {name:'JACKSON THOMAS'},{name:'UNNI PRASAD'},{name:'AKHIL KV'},
+      {name:'JAYESH'},{name:'PRASANTH'}
+    ],
+    contributions: {
+      'SARUN KUMAR': {Jan:100,Feb:0,Mar:0,Apr:0,May:0,Jun:0,Jul:0,Aug:0,Sep:0,Oct:0,Nov:0,Dec:0},
+      'CHIKKU':      {Jan:100,Feb:0,Mar:0,Apr:0,May:0,Jun:0,Jul:0,Aug:0,Sep:0,Oct:0,Nov:0,Dec:0},
+      'SUPRAN':      {Jan:100,Feb:0,Mar:0,Apr:0,May:0,Jun:0,Jul:0,Aug:0,Sep:0,Oct:0,Nov:0,Dec:0},
+      'AMAL':        {Jan:100,Feb:0,Mar:0,Apr:0,May:0,Jun:0,Jul:0,Aug:0,Sep:0,Oct:0,Nov:0,Dec:0},
+      'LARISH':      {Jan:100,Feb:0,Mar:0,Apr:0,May:0,Jun:0,Jul:0,Aug:0,Sep:0,Oct:0,Nov:0,Dec:0},
+    },
+    expenses: [],
+    adminPass: 'cp2025',
+  };
+}
+
+async function saveData() {
+  setSyncStatus('saving', '💾 Saving…');
+  try {
+    await setDoc(doc(db, 'app', 'data'), DB);
+    setSyncStatus('live', '🟢 Live');
+  } catch(e) {
+    setSyncStatus('error', '🔴 Save failed');
+    toast('Save failed — check connection');
+  }
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  selectRole('member');
+}
+
+window.selectRole = function(role) {
+  document.getElementById('btn-member').classList.toggle('selected', role==='member');
+  document.getElementById('btn-admin').classList.toggle('selected', role==='admin');
+  document.getElementById('member-select').style.display = role==='member' ? 'block' : 'none';
+  document.getElementById('admin-pass').style.display = role==='admin' ? 'block' : 'none';
+  currentRole = role;
+  const sel = document.getElementById('login-member');
+  sel.innerHTML = '<option value="">— choose —</option>';
+  (DB.members || []).forEach(m => {
+    const o = document.createElement('option');
+    o.value = m.name; o.textContent = m.name; sel.appendChild(o);
+  });
+}
+
+window.doLogin = function() {
+  if (!currentRole) { toast('Please select Member or Admin'); return; }
+  if (currentRole === 'admin') {
+    const p = document.getElementById('admin-password').value;
+    if (p !== (DB.adminPass || 'cp2025')) { toast('Incorrect password'); return; }
+    currentUser = 'Admin';
+    launchApp('admin');
+  } else {
+    const name = document.getElementById('login-member').value;
+    if (!name) { toast('Please select your name'); return; }
+    currentUser = name;
+    launchApp('member');
+  }
+}
+
+function launchApp(role) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('role-display').textContent = role === 'admin' ? '🔑 Admin' : '👤 ' + currentUser;
+  if (role === 'admin') {
+    document.getElementById('role-display').classList.add('admin');
+    document.getElementById('tab-admin').style.display = 'inline-block';
+  }
+  const fmember = document.getElementById('f-member');
+  fmember.innerHTML = '';
+  if (role === 'admin') {
+    (DB.members||[]).forEach(m => { const o=document.createElement('option'); o.value=m.name; o.textContent=m.name; fmember.appendChild(o); });
+    fmember.disabled = false;
+  } else {
+    const o=document.createElement('option'); o.value=currentUser; o.textContent=currentUser; fmember.appendChild(o);
+    fmember.disabled = true;
+  }
+  const d = new Date();
+  document.getElementById('f-month').value = MONTHS[d.getMonth()];
+  document.getElementById('f-date').valueAsDate = d;
+  // Sync dot in header
+  document.getElementById('sync-dot-app').style.cssText='width:8px;height:8px;border-radius:50%;display:inline-block;background:#1D9E75;box-shadow:0 0 0 2px #9FE1CB;';
+  document.getElementById('sync-label-app').textContent = '🟢 Live';
+  renderAll();
+}
+
+window.logout = function() {
+  currentUser = null; currentRole = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('admin-password').value = '';
+  document.getElementById('role-display').classList.remove('admin');
+  document.getElementById('tab-admin').style.display = 'none';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+window.showTab = function(id, event) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  renderAll();
+}
+
+// ── CALCULATIONS ──────────────────────────────────────────────────
+function totalCollected() {
+  let t = 0;
+  (DB.members||[]).forEach(m => {
+    const c = (DB.contributions||{})[m.name];
+    if (c) MONTHS.forEach(mo => t += (c[mo]||0));
+  });
+  return t;
+}
+function totalCollectedByMonth(month) {
+  let t = 0;
+  (DB.members||[]).forEach(m => {
+    const c = (DB.contributions||{})[m.name];
+    if (c) t += (c[month]||0);
+  });
+  return t;
+}
+function memberTotalPaid(name) {
+  const c = (DB.contributions||{})[name];
+  if (!c) return 0;
+  return MONTHS.reduce((a, m) => a + (c[m]||0), 0);
+}
+function approvedExpenses() { return (DB.expenses||[]).filter(e => e.status === 'approved'); }
+function pendingExpenses()  { return (DB.expenses||[]).filter(e => e.status === 'pending'); }
+function totalApproved()    { return approvedExpenses().reduce((a,e) => a + Number(e.amount), 0); }
+function totalPending()     { return pendingExpenses().reduce((a,e) => a + Number(e.amount), 0); }
+function totalApprovedByMonth(month) {
+  return approvedExpenses().filter(e => e.month===month).reduce((a,e) => a + Number(e.amount), 0);
+}
+function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+// ── RENDER ────────────────────────────────────────────────────────
+function renderAll() {
+  if (!DB) return;
+  renderOverview();
+  renderContributions();
+  renderExpensesView();
+  renderBalance();
+  renderDues();
+  renderMySubmissions();
+  if (currentRole === 'admin') {
+    renderPending();
+    renderContribEdit();
+    renderMemberManage();
+    updatePendingDot();
+  }
+}
+
+function renderOverview() {
+  const col = totalCollected(), exp = totalApproved(), bal = col-exp, pend = totalPending();
+  document.getElementById('s-collected').textContent = fmt(col);
+  document.getElementById('s-expenses').textContent = fmt(exp);
+  document.getElementById('s-balance').textContent = fmt(bal);
+  document.getElementById('s-balance').className = 'stat-val ' + (bal>=0?'green':'red');
+  document.getElementById('s-pending').textContent = fmt(pend);
+
+  let rows=''; let tc=0,te=0,tb=0;
+  MONTHS.forEach(m => {
+    const c=totalCollectedByMonth(m), e=totalApprovedByMonth(m), b=c-e;
+    tc+=c; te+=e; tb+=b;
+    if (c>0||e>0) rows+=`<tr>
+      <td>${m}</td>
+      <td class="amt amt-green" style="text-align:right">${c>0?fmt(c):'—'}</td>
+      <td class="amt ${e>0?'amt-red':''}" style="text-align:right">${e>0?fmt(e):'—'}</td>
+      <td class="amt ${b>0?'amt-green':b<0?'amt-red':''}" style="text-align:right">${fmt(b)}</td>
+    </tr>`;
+  });
+  document.getElementById('overview-body').innerHTML = rows || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No data yet.</td></tr>';
+  document.getElementById('ov-tot-col').textContent = fmt(tc);
+  document.getElementById('ov-tot-exp').textContent = fmt(te);
+  document.getElementById('ov-tot-bal').textContent = fmt(tb);
+  document.getElementById('ov-tot-bal').className = 'amt ' + (tb>=0?'amt-green':'amt-red');
+}
+
+function renderContributions() {
+  let rows=''; let total=0;
+  (DB.members||[]).forEach((m,i) => {
+    const paid=memberTotalPaid(m.name); total+=paid;
+    const status = paid>=1200 ? '<span class="badge badge-green">Fully paid</span>' :
+                   paid>0    ? '<span class="badge badge-amber">Partial</span>' :
+                               '<span class="badge badge-red">Not paid</span>';
+    rows+=`<tr>
+      <td style="color:var(--text-muted)">${i+1}</td>
+      <td style="font-weight:500">${m.name}</td>
+      <td class="amt" style="text-align:right">${paid>0?fmt(paid):'—'}</td>
+      <td>${status}</td>
+    </tr>`;
+  });
+  document.getElementById('contrib-body').innerHTML = rows;
+  document.getElementById('contrib-total').textContent = fmt(total);
+
+  // Month-by-month detail table
+  const monthTotals = {}; MONTHS.forEach(mo => monthTotals[mo]=0);
+  let mrows = '';
+  (DB.members||[]).forEach((m,i) => {
+    const c = (DB.contributions||{})[m.name] || {};
+    let rowTotal = 0;
+    const cells = MONTHS.map(mo => {
+      const val = c[mo];
+      monthTotals[mo] += (val||0);
+      rowTotal += (val||0);
+      if (val === undefined || val === null) return `<td style="text-align:right"><span class="mcell mcell-empty">—</span></td>`;
+      if (val === 0)   return `<td style="text-align:right"><span class="mcell mcell-zero">✗</span></td>`;
+      if (val >= 100)  return `<td style="text-align:right"><span class="mcell mcell-paid">₹${val}</span></td>`;
+      return             `<td style="text-align:right"><span class="mcell mcell-part">₹${val}</span></td>`;
+    }).join('');
+    const rowBadge = rowTotal>=1200 ? 'amt-green' : rowTotal>0 ? 'amt-amber' : 'amt-red';
+    mrows += `<tr>
+      <td style="color:var(--text-muted)">${i+1}</td>
+      <td style="font-weight:500;white-space:nowrap">${m.name}</td>
+      ${cells}
+      <td style="text-align:right"><strong class="amt ${rowBadge}">${rowTotal>0?fmt(rowTotal):'—'}</strong></td>
+    </tr>`;
+  });
+  document.getElementById('monthly-contrib-body').innerHTML = mrows;
+
+  // Footer row: month totals
+  const footCells = MONTHS.map(mo => {
+    const t = monthTotals[mo];
+    return `<td style="text-align:right" class="amt ${t>0?'amt-green':''}">${t>0?fmt(t):'—'}</td>`;
+  }).join('');
+  const grandFootTotal = MONTHS.reduce((a,mo)=>a+monthTotals[mo],0);
+  document.getElementById('monthly-contrib-foot').innerHTML =
+    `<td colspan="2" style="font-weight:500">Month total</td>${footCells}<td style="text-align:right" class="amt amt-green"><strong>${grandFootTotal>0?fmt(grandFootTotal):'—'}</strong></td>`;
+}
+
+function renderExpensesView() {
+  const approved = approvedExpenses();
+  const body=document.getElementById('expense-body'), none=document.getElementById('no-expenses');
+  if (!approved.length) { body.innerHTML=''; none.style.display='block'; return; }
+  none.style.display='none';
+  body.innerHTML = [...approved].reverse().map(e=>`
+    <tr>
+      <td>${e.date}</td><td>${e.desc}</td>
+      <td style="color:var(--text-muted)">${e.member}</td>
+      <td><span class="badge badge-gray">${e.month}</span></td>
+      <td class="amt amt-red" style="text-align:right">${fmt(e.amount)}</td>
+    </tr>`).join('');
+}
+
+function renderBalance() {
+  let rows=''; let tc=0,te=0,tb=0;
+  MONTHS.forEach(m => {
+    const c=totalCollectedByMonth(m), e=totalApprovedByMonth(m), b=c-e;
+    tc+=c; te+=e; tb+=b;
+    rows+=`<tr>
+      <td>${m}</td>
+      <td class="amt" style="text-align:right">${c>0?fmt(c):'—'}</td>
+      <td class="amt ${e>0?'amt-red':''}" style="text-align:right">${e>0?fmt(e):'—'}</td>
+      <td class="amt ${b>0?'amt-green':b<0?'amt-red':''}" style="text-align:right">${(c>0||e>0)?fmt(b):'—'}</td>
+    </tr>`;
+  });
+  document.getElementById('balance-body').innerHTML = rows;
+  document.getElementById('bal-tot-col').textContent = fmt(tc);
+  document.getElementById('bal-tot-exp').textContent = fmt(te);
+  document.getElementById('bal-tot-bal').textContent = fmt(tb);
+}
+
+function renderDues() {
+  let rows=''; let totExp=0,totPaid=0,totOut=0;
+  (DB.members||[]).forEach((m,i) => {
+    const paid=memberTotalPaid(m.name), expected=1200, out=expected-paid;
+    totExp+=expected; totPaid+=paid; totOut+=out;
+    const badge = out<=0 ? '<span class="badge badge-green">Cleared</span>' :
+                  paid>0 ? '<span class="badge badge-amber">Partial</span>' :
+                           '<span class="badge badge-red">Unpaid</span>';
+    rows+=`<tr>
+      <td style="color:var(--text-muted)">${i+1}</td>
+      <td style="font-weight:500">${m.name}</td>
+      <td class="amt" style="text-align:right">${fmt(expected)}</td>
+      <td class="amt amt-green" style="text-align:right">${paid>0?fmt(paid):'—'}</td>
+      <td class="amt ${out>0?'amt-red':'amt-green'}" style="text-align:right">${fmt(out)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+  document.getElementById('dues-body').innerHTML=rows;
+  document.getElementById('dues-exp').textContent=fmt(totExp);
+  document.getElementById('dues-paid').textContent=fmt(totPaid);
+  document.getElementById('dues-out').textContent=fmt(totOut);
+}
+
+function renderMySubmissions() {
+  const mine=(DB.expenses||[]).filter(e=>e.member===currentUser);
+  const body=document.getElementById('my-submissions-body'), none=document.getElementById('no-submissions');
+  if (!mine.length) { body.innerHTML=''; none.style.display='block'; return; }
+  none.style.display='none';
+  body.innerHTML = [...mine].reverse().map(e => {
+    const badge = e.status==='approved' ? '<span class="badge badge-green">Approved</span>' :
+                  e.status==='rejected' ? '<span class="badge badge-red">Rejected</span>' :
+                                          '<span class="badge badge-amber">Pending</span>';
+    return `<tr><td>${e.date}</td><td>${e.desc}</td><td class="amt" style="text-align:right">${fmt(e.amount)}</td><td>${badge}</td></tr>`;
+  }).join('');
+}
+
+function renderPending() {
+  const pending=pendingExpenses();
+  const list=document.getElementById('pending-list'), none=document.getElementById('no-pending');
+  document.getElementById('pending-count-label').textContent = pending.length>0 ? `(${pending.length} pending)` : '';
+  if (!pending.length) { list.innerHTML=''; none.style.display='block'; return; }
+  none.style.display='none';
+  list.innerHTML = pending.map(e=>`
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;">
+      <div class="approve-row">
+        <div class="info">
+          <div style="font-weight:500;margin-bottom:4px">${e.desc}</div>
+          <div style="font-size:12px;color:var(--text-muted)">
+            By <strong>${e.member}</strong> · ${e.date} · <span class="badge badge-gray">${e.month}</span>
+            ${e.notes?`<div style="margin-top:4px">Note: ${e.notes}</div>`:''}
+          </div>
+        </div>
+        <div style="font-size:18px;font-weight:500;font-family:'DM Mono',monospace;color:var(--red);margin:0 16px;">${fmt(e.amount)}</div>
+        <div class="actions">
+          <button class="btn btn-sm btn-primary" onclick="approveExpense('${e.id}')">✓ Approve</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectExpense('${e.id}')">✗ Reject</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderContribEdit() {
+  const month=document.getElementById('contrib-month-select').value;
+  let rows='';
+  (DB.members||[]).forEach((m,i) => {
+    const c=(DB.contributions||{})[m.name]||{}, val=c[month]||0;
+    rows+=`<tr>
+      <td style="color:var(--text-muted)">${i+1}</td>
+      <td>${m.name}</td>
+      <td><input class="contrib-input" type="number" min="0" step="1" value="${val}" data-member="${m.name}" data-month="${month}"></td>
+      <td></td>
+    </tr>`;
+  });
+  document.getElementById('contrib-edit-body').innerHTML=rows;
+}
+
+function renderMemberManage() {
+  let rows='';
+  (DB.members||[]).forEach((m,i) => {
+    const paid=memberTotalPaid(m.name);
+    rows+=`<tr>
+      <td style="color:var(--text-muted)">${i+1}</td>
+      <td style="font-weight:500">${m.name}</td>
+      <td class="amt" style="text-align:right">${paid>0?fmt(paid):'—'}</td>
+      <td><button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="removeMember('${m.name}')">Remove</button></td>
+    </tr>`;
+  });
+  document.getElementById('member-manage-body').innerHTML=rows;
+}
+
+function updatePendingDot() {
+  document.getElementById('pending-dot').style.display = pendingExpenses().length>0 ? 'inline-block' : 'none';
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────
+window.submitExpense = async function() {
+  const member=document.getElementById('f-member').value;
+  const date=document.getElementById('f-date').value;
+  const month=document.getElementById('f-month').value;
+  const amount=parseFloat(document.getElementById('f-amount').value);
+  const desc=document.getElementById('f-desc').value.trim();
+  const notes=document.getElementById('f-notes').value.trim();
+  if (!member||!date||!amount||amount<=0||!desc) { toast('Please fill all required fields'); return; }
+  if (!DB.expenses) DB.expenses = [];
+  DB.expenses.push({ id: Date.now().toString(), member, date, month, amount, desc, notes, status:'pending', submittedAt: new Date().toISOString() });
+  await saveData();
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-notes').value='';
+  document.getElementById('f-amount').value='';
+  toast('Expense submitted — waiting for admin approval');
+}
+
+window.approveExpense = async function(id) {
+  const e=(DB.expenses||[]).find(x=>x.id===id);
+  if (e) { e.status='approved'; e.approvedAt=new Date().toISOString(); }
+  await saveData(); toast('Expense approved ✅');
+}
+
+window.rejectExpense = async function(id) {
+  const e=(DB.expenses||[]).find(x=>x.id===id);
+  if (e) { e.status='rejected'; e.rejectedAt=new Date().toISOString(); }
+  await saveData(); toast('Expense rejected');
+}
+
+window.saveContributions = async function() {
+  document.querySelectorAll('.contrib-input').forEach(inp => {
+    const name=inp.dataset.member, month=inp.dataset.month, val=parseFloat(inp.value)||0;
+    if (!DB.contributions) DB.contributions={};
+    if (!DB.contributions[name]) DB.contributions[name]={};
+    DB.contributions[name][month]=val;
+  });
+  await saveData(); toast('Contributions saved ✅');
+}
+
+window.addMember = async function() {
+  const name=document.getElementById('new-member-name').value.trim().toUpperCase();
+  if (!name) { toast('Enter a member name'); return; }
+  if ((DB.members||[]).find(m=>m.name===name)) { toast('Member already exists'); return; }
+  if (!DB.members) DB.members=[];
+  DB.members.push({name});
+  await saveData();
+  document.getElementById('new-member-name').value='';
+  toast('Member added: '+name);
+}
+
+window.removeMember = async function(name) {
+  if (!confirm('Remove '+name+'? Their contributions will be deleted.')) return;
+  DB.members=(DB.members||[]).filter(m=>m.name!==name);
+  if (DB.contributions) delete DB.contributions[name];
+  await saveData(); toast('Member removed');
+}
+
+window.changePassword = async function() {
+  const np=document.getElementById('new-pass').value;
+  const cp=document.getElementById('confirm-pass').value;
+  if (!np) { toast('Enter a new password'); return; }
+  if (np!==cp) { toast('Passwords do not match'); return; }
+  DB.adminPass=np;
+  await saveData();
+  document.getElementById('new-pass').value='';
+  document.getElementById('confirm-pass').value='';
+  toast('Password updated');
+}
+
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+window.renderContribEdit = renderContribEdit;
+
+// Start
+init();
+</script>
+</body>
+</html>
